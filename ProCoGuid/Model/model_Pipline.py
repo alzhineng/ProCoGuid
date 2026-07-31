@@ -82,7 +82,6 @@ def decode_predictions(pred, S=7, conf_thresh=0.0, img_size=224):
                     best_conf = conf
                     best_box  = [x1, y1, x2, y2, conf]
 
-        # ✅ 如果没找到满足阈值的框，添加整图框作为兜底方案
         if best_box is not None:
             all_boxes.append([best_box])
         else:
@@ -145,12 +144,8 @@ def mask_to_yolo_target(mask, S=12, img_size=384, class_idx=0):
 
     for b in range(B):
         m = mask[b, 0]  # (H, W)
-
-        # 找到所有目标区域
         if m.sum() == 0:
             continue
-
-        # 获取目标区域的边界框
         ys, xs = torch.nonzero(m, as_tuple=True)
         y_min, y_max = ys.min(), ys.max()
         x_min, x_max = xs.min(), xs.max()
@@ -160,14 +155,11 @@ def mask_to_yolo_target(mask, S=12, img_size=384, class_idx=0):
         cy = ((y_min + y_max) / 2) / img_size
         w = (x_max - x_min) / img_size
         h = (y_max - y_min) / img_size
-
-        # 找到目标中心所在的网格
         i = int(cy * S)
         j = int(cx * S)
         i = min(i, S - 1)
         j = min(j, S - 1)
 
-        # 相对于 cell 的坐标
         cell_cx = cx * S - j
         cell_cy = cy * S - i
 
